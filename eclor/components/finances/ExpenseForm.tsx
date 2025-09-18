@@ -41,9 +41,21 @@ const formatDate = (date: Date) => {
   return [year, month, day].join("-");
 };
 
+const parseDate = (dateString: string): Date | null => {
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match.map(Number);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
+};
+
 export default function ExpenseForm() {
-  const { open, setOpen, form, setForm } = useExpenseForm();
+  const { open, setOpen, form, setForm, resetForm } = useExpenseForm();
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -71,18 +83,34 @@ export default function ExpenseForm() {
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
     console.log("Form submitted:", form);
-    // Here you would typically send the data to a server
-    // For now, we'll just simulate a successful submission
-    setSent(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+      setSent(true);
+      resetForm();
+    }, 1500); // 1.5 second delay
   };
+
+  const [dateInput, setDateInput] = useState('');
+
+  useEffect(() => {
+    // When the form is opened/reset, sync the dateInput with the context
+    if (form.datePaiement) {
+      setDateInput(formatDate(new Date(form.datePaiement)));
+    } else {
+      setDateInput('');
+    }
+  }, [form.datePaiement]);
 
   const isFormValid =
     v(form.categorie).trim() !== "" &&
     v(form.libelle).trim() !== "" &&
     n(form.montantTTC) !== null &&
     form.montantTTC > 0 &&
-    v(form.datePaiement?.toString()).trim() !== "";
+    form.datePaiement !== null;
 
   if (sent) {
     return (
@@ -91,6 +119,16 @@ export default function ExpenseForm() {
           <Text style={styles.successText}>
             ✅ Dépense ajoutée avec succès!
           </Text>
+          <Pressable
+            style={[styles.button, { marginTop: 20 }]}
+            onPress={() => {
+              setOpen(false); // Close the modal
+              // Also reset the 'sent' state for the next time the form opens
+              setTimeout(() => setSent(false), 200); // delay to prevent flash
+            }}
+          >
+            <Text style={styles.buttonText}>Fermer</Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -125,12 +163,12 @@ export default function ExpenseForm() {
             <TextInput
               style={styles.input}
               placeholder="Date (YYYY-MM-DD) *"
-              value={
-                form.datePaiement ? formatDate(new Date(form.datePaiement)) : ""
-              }
-              onChangeText={(text) =>
-                setForm((prev) => ({ ...prev, datePaiement: new Date(text) }))
-              }
+              value={dateInput}
+              onChangeText={(text) => {
+                setDateInput(text);
+                const parsed = parseDate(text);
+                setForm((prev) => ({ ...prev, datePaiement: parsed }));
+              }}
             />
             <TextInput
               style={styles.input}
@@ -174,11 +212,11 @@ export default function ExpenseForm() {
         </ScrollView>
         <View style={styles.footer}>
           <Pressable
-            style={[styles.button, !isFormValid && styles.buttonDisabled]}
+            style={[styles.button, (!isFormValid || loading) && styles.buttonDisabled]}
             onPress={handleSubmit}
-            disabled={!isFormValid}
+            disabled={!isFormValid || loading}
           >
-            <Text style={styles.buttonText}>Envoyer</Text>
+            <Text style={styles.buttonText}>{loading ? 'Envoi en cours...' : 'Envoyer'}</Text>
           </Pressable>
         </View>
       </View>
