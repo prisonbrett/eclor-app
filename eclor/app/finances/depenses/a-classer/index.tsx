@@ -10,6 +10,7 @@ import SideMenu from '@/components/ui/SideMenu';
 import MenuPill from '@/components/ui/MenuPill';
 import BackPill from '@/components/ui/BackPill';
 import TableView, { TableColumn } from '@/components/ui/TableView';
+import { useExpenseForm } from '@/features/depenses/ExpenseFormProvider';
 import { readSheetRange } from '@/lib/GoogleSheets';
 import {
   DEPENSES_SHEET_NAME,
@@ -33,6 +34,7 @@ type Row = ReturnType<typeof mapDepenses>[0];
 
 export default function AClasserScreen() {
   const router = useRouter();
+  const { setOpen } = useExpenseForm();
   const insets = useSafeAreaInsets();
   const { width: screenW, height: screenH } = useWindowDimensions();
 
@@ -249,7 +251,12 @@ export default function AClasserScreen() {
       {/* HEADER */}
       <View style={[styles.headerRow, { paddingHorizontal: H_MARGIN }]}>
         <LogoButton width={LOGO_W} height={LOGO_H} onPress={() => router.replace({ pathname: '/' })} />
-        <PageTag text="📥 À CLASSER" fontSize={fontSize} lineHeight={lineHeight} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+          <PageTag text="📥 À CLASSER" fontSize={fontSize} lineHeight={lineHeight} />
+          <Pressable onPress={() => setOpen(true)} style={styles.addButton}>
+            <Text style={styles.addButtonText}>+</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* TABLE */}
@@ -320,4 +327,23 @@ const styles = StyleSheet.create({
     userSelect: 'none',
   },
   tableWrap: { alignSelf: 'stretch' },
+  addButton: {
+    backgroundColor: 'white',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  addButtonText: {
+    color: '#C14E4E',
+    fontSize: 24,
+    fontWeight: 'bold',
+    lineHeight: 28,
+  },
 });
